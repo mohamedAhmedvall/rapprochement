@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analyse Rapprochement Impayés / Encaissements — v2</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f7f8fa;--card:#fff;--border:#e2e5ea;--text:#1a1d23;--text2:#5a6070;--accent:#0066cc;--accent-light:#e8f0fe;--green:#0d7c3e;--green-bg:#e6f4ec;--orange:#c05600;--orange-bg:#fef3e6;--red:#c62828;--red-bg:#fce8e8;--purple:#6a1b9a;--purple-bg:#f3e5f5;--sem:#1565c0;--semm:#c62828}
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;padding:24px}
+.container{max-width:1200px;margin:0 auto}
+header{text-align:center;padding:40px 0 32px}header h1{font-size:26px;font-weight:700;margin-bottom:6px}header .subtitle{color:var(--text2);font-size:14px}header .date{display:inline-block;background:var(--accent-light);color:var(--accent);font-size:12px;font-weight:500;padding:3px 10px;border-radius:20px;margin-top:10px}
+.section{margin-bottom:28px}.section-title{font-size:17px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}.section-title .num{background:var(--accent);color:#fff;width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:14px}.card h3{font-size:14px;font-weight:700;margin-bottom:10px}.card p,.card li{font-size:13px;color:var(--text2);margin-bottom:6px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}@media(max-width:800px){.grid2,.grid3{grid-template-columns:1fr}}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px;text-align:center}.stat-card .value{font-size:28px;font-weight:700;color:var(--accent)}.stat-card .label{font-size:12px;color:var(--text2);margin-top:3px}.stat-card.sem .value{color:var(--sem)}.stat-card.semm .value{color:var(--semm)}.stat-card.ok .value{color:var(--green)}
+table{width:100%;border-collapse:collapse;font-size:12px}th{background:var(--bg);font-weight:600;text-align:left;padding:8px 10px;border-bottom:2px solid var(--border)}td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}tr:hover td{background:#fafbfc}
+.tag{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px}.tag-sem{background:#e3f2fd;color:var(--sem)}.tag-semm{background:var(--red-bg);color:var(--semm)}.tag-match{background:var(--green-bg);color:var(--green)}.tag-warn{background:var(--orange-bg);color:var(--orange)}.tag-critical{background:var(--red-bg);color:var(--red)}.tag-info{background:var(--purple-bg);color:var(--purple)}.tag-new{background:#e0f7fa;color:#00695c;font-size:9px;text-transform:uppercase;letter-spacing:.5px}
+.rule-box{border-left:4px solid var(--accent);padding:14px 18px;background:var(--accent-light);border-radius:0 8px 8px 0;margin-bottom:10px}.rule-box.green{border-color:var(--green);background:var(--green-bg)}.rule-box.orange{border-color:var(--orange);background:var(--orange-bg)}.rule-box.purple{border-color:var(--purple);background:var(--purple-bg)}.rule-box.red{border-color:var(--red);background:var(--red-bg)}.rule-box .rule-title{font-size:13px;font-weight:700;margin-bottom:3px}.rule-box .rule-desc{font-size:12px;color:var(--text2)}
+code{font-family:'JetBrains Mono',monospace;font-size:11px;background:#f0f2f5;padding:1px 5px;border-radius:3px}
+.highlight{background:#fffde7;padding:10px 14px;border-radius:7px;border:1px solid #f9e44c;font-size:12px;margin:10px 0}
+.cycle-box{display:flex;gap:0;margin:16px 0;flex-wrap:wrap}.cycle-step{flex:1;min-width:180px;padding:14px;text-align:center;position:relative;font-size:12px}.cycle-step:nth-child(1){background:#e3f2fd;border-radius:8px 0 0 8px}.cycle-step:nth-child(2){background:#fff3e0}.cycle-step:nth-child(3){background:#e8f5e9}.cycle-step:nth-child(4){background:#fce4ec}.cycle-step:nth-child(5){background:#f3e5f5;border-radius:0 8px 8px 0}.cycle-step .step-num{font-weight:700;font-size:18px;opacity:.3;display:block}.cycle-step .step-title{font-weight:600;font-size:12px;margin:4px 0 2px}.cycle-step .step-detail{font-size:11px;color:var(--text2)}
+pre{background:#1a1d23;color:#e8eaed;padding:18px;border-radius:8px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.7}
+.progress-bar{background:#eee;border-radius:20px;height:22px;position:relative;overflow:hidden;margin:8px 0}.progress-bar .fill{height:100%;border-radius:20px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>Analyse Rapprochement Impayés / Encaissements</h1>
+  <p class="subtitle">Règles de matching — SEM &amp; SEMM — Version affinée</p>
+  <span class="date">Fichiers du 16-17/12/2025 • Waterp</span>
+</header>
+
+<!-- SECTION 1: CYCLE DE VIE -->
+<div class="section">
+  <div class="section-title"><span class="num">1</span> Cycle de vie d'un encaissement <span class="tag tag-new">Nouveau</span></div>
+  
+  <div class="card">
+    <h3>Parcours validé sur l'exemple SOGIMA — Ref 40251200016320 — 57 761,88 €</h3>
+    <div class="cycle-box">
+      <div class="cycle-step">
+        <span class="step-num">1</span>
+        <div class="step-title">Encaissement bancaire</div>
+        <div class="step-detail">Relevé SEMM du <strong>16/12/2025</strong><br>Virement de SOGIMA<br>Montant: 57 761,88 €<br>Ref extraite: 40251200016320</div>
+      </div>
+      <div class="cycle-step">
+        <span class="step-num">2</span>
+        <div class="step-title">Impayé en attente</div>
+        <div class="step-detail">Fichier impayés du <strong>17/12</strong><br>Ligne 4669<br>Ref O: 40251200016320<br>Contrat: 1089100<br>Client: 0000056 (SOGIMA)</div>
+      </div>
+      <div class="cycle-step">
+        <span class="step-num">3</span>
+        <div class="step-title">Saisie Waterp</div>
+        <div class="step-detail">Le <strong>17/12/2025</strong> (J+1)<br>Code soc: 40<br>N° contrat: 1089100<br>Lettrage: 40251200016320<br>REGLEMENT 09 / CCP</div>
+      </div>
+      <div class="cycle-step">
+        <span class="step-num">4</span>
+        <div class="step-title">Impayé soldé</div>
+        <div class="step-detail">Fichier impayés du <strong>18/12</strong><br>La ref 40251200016320<br><strong>n'apparaît plus</strong><br>(filtre = aucune correspondance)</div>
+      </div>
+      <div class="cycle-step">
+        <span class="step-num">5</span>
+        <div class="step-title">Waterp lettré</div>
+        <div class="step-detail">Facture 08/12/2025<br>Débit: 57 761,88 €<br>Règlement 17/12/2025<br>Crédit: 57 761,88 €<br><strong>Solde: 0,00 €</strong></div>
+      </div>
+    </div>
+    <div class="highlight">
+      <strong>Enseignement clé :</strong> La colonne "Lettrage" dans Waterp = la <strong>Référence facture</strong> (col O des impayés). Le "Numéro d" = le <strong>N° de Contrat</strong> (col C). Le Code société = les 2 premiers chiffres de la référence. La saisie se fait toujours à <strong>J+1</strong>. Le type d'écriture est <code>REGLEMENT 09</code> avec mode <code>CCP VIREMENTS DIVERS</code>.
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 2: STRUCTURE -->
+<div class="section">
+  <div class="section-title"><span class="num">2</span> Structure des données</div>
+  <div class="grid3">
+    <div class="stat-card"><div class="value">112 489</div><div class="label">Lignes impayés (historique 2013-2025)</div></div>
+    <div class="stat-card sem"><div class="value">56</div><div class="label">Encaissements SEM du 16/12</div></div>
+    <div class="stat-card semm"><div class="value">172 + 23</div><div class="label">Encaissements SEMM + sous-lignes</div></div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3>Correspondance colonnes Encaissement ↔ Impayés ↔ Waterp</h3>
+    <table>
+      <tr><th>Donnée</th><th>Encaissement</th><th>Impayés</th><th>Saisie Waterp</th></tr>
+      <tr><td><strong>Référence facture</strong></td><td>Col D (regex ou manuelle)</td><td>Col O (14 chiffres)</td><td>"Lettrage"</td></tr>
+      <tr><td><strong>N° de contrat</strong></td><td>Col D (si 5-7 chiffres) ou libellé B</td><td>Col C</td><td>"Numéro d"</td></tr>
+      <tr><td><strong>Code société</strong></td><td>Préfixe ref: 10=SEM, 40=SEMM</td><td>Col Z + préfixe col O</td><td>"Code société"</td></tr>
+      <tr><td><strong>Montant</strong></td><td>Col C (total) ou Col E (ventilé)</td><td>Col T (Solde TTC restant)</td><td>"Encaissement"</td></tr>
+      <tr><td><strong>Date encaissement</strong></td><td>Col A (16/12/2025)</td><td>—</td><td>"Date" (17/12 = J+1)</td></tr>
+      <tr><td><strong>Date facture</strong></td><td>—</td><td>Col Q</td><td>—</td></tr>
+      <tr><td><strong>Nom payeur</strong></td><td>Libellé B (après "VIREMENT DE")</td><td>Col J (Raison Sociale)</td><td>—</td></tr>
+      <tr><td><strong>N° client</strong></td><td>Libellé B (regex)</td><td>Col E</td><td>—</td></tr>
+      <tr><td><strong>Mode règlement</strong></td><td>CCP (virements postaux)</td><td>Col Y (code mode)</td><td>"Mode Règlement" = CCP VIREMENTS DIVERS</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- SECTION 3: RÈGLES DE MATCHING -->
+<div class="section">
+  <div class="section-title"><span class="num">3</span> Règles de matching — par niveau de fiabilité</div>
+  
+  <div class="card">
+    <div class="rule-box green">
+      <div class="rule-title">🔑 NIVEAU 1 — Référence facture (col D encaissement → col O impayés)</div>
+      <div class="rule-desc">
+        La clé primaire. Extraite par REGEXEXTRACT dans Google Sheets ou annotée manuellement en col D.<br>
+        <strong>SEM :</strong> pattern <code>10\d{12}</code> (14 chiffres commençant par 10)<br>
+        <strong>SEMM :</strong> pattern <code>40\d{12}</code> (14 chiffres commençant par 40)<br>
+        <strong>EFICASH :</strong> ref 40xxx dans le libellé après <code>REF: 00</code><br>
+        <strong>Résultat :</strong> 26/27 SEM ✓ • 105/118 SEMM ✓ • 4/4 EFICASH ✓
+      </div>
+    </div>
+
+    <div class="rule-box">
+      <div class="rule-title">🔑 NIVEAU 2 — N° de Contrat (col D encaissement → col C impayés)</div>
+      <div class="rule-desc">
+        Quand col D contient un numéro 5-7 chiffres. Ou extrait du libellé via <code>contrat NNNNNNN</code>.<br>
+        <strong>⚠️ Padding zéros :</strong> Le contrat dans les impayés fait 7 caractères avec zéros en tête. Padder <code>447068 → 0447068</code>.<br>
+        <strong>Résultat :</strong> 6 SEM ✓ • 27 SEMM ✓ (26 matchent après padding)
+      </div>
+    </div>
+
+    <div class="rule-box orange">
+      <div class="rule-title">🔑 NIVEAU 3 — Nom + Montant (libellé B → col J + col T impayés)</div>
+      <div class="rule-desc">
+        Extraction du nom après "VIREMENT DE" ou "VIREMENT INSTANTANE DE" + comparaison avec Solde TTC.<br>
+        <strong>Fiabilité :</strong> Moyenne — noms souvent tronqués (25 car. max dans libellé bancaire).
+      </div>
+    </div>
+
+    <div class="rule-box purple">
+      <div class="rule-title">🔑 NIVEAU 4 — Recherche cross-société</div>
+      <div class="rule-desc">
+        Certains payeurs versent sur un compte SEMM pour des factures SEM (ref 10xxx) ou VIVAIGO (ref 33xxx). <br>
+        <strong>Ex :</strong> GARIG SAS (SEMM) paye la ref <code>10251100001745</code> (SEM) • SDC NOTRE DAME (SEMM) pour ref <code>33251200016918</code> (VIVAIGO).<br>
+        <strong>Règle :</strong> Toujours chercher dans TOUT l'index des refs, pas seulement la société du fichier.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 4: CAS SPÉCIAUX -->
+<div class="section">
+  <div class="section-title"><span class="num">4</span> Cas spéciaux et pièges identifiés</div>
+  
+  <div class="grid2">
+    <div class="card">
+      <h3>Sous-lignes de ventilation (D/E sans B)</h3>
+      <p>Un organisme (AJAssocies, SDC...) paye un montant global pour N contrats. Les lignes suivantes (sans libellé) détaillent chaque ref (D) et montant (E).</p>
+      <p><strong>23 sous-lignes</strong> dans SEMM. La somme des E ≈ montant C (delta arrondi ≤ 0,12 €).</p>
+      <p><strong>Règle :</strong> Chaque sous-ligne = un match individuel D→col O.</p>
+    </div>
+    <div class="card">
+      <h3>Références tronquées (13 chiffres)</h3>
+      <p>Certaines refs en col D font 13 au lieu de 14 chiffres (dernier chiffre coupé). Ex: <code>1025110000433</code>, <code>40251000001810</code>.</p>
+      <p><strong>Cause :</strong> Troncature dans le libellé bancaire (limite 105 caractères) ou extraction regex incomplète.</p>
+      <p><strong>Règle :</strong> Si ref fait 13 chiffres → match par préfixe dans l'index des refs.</p>
+    </div>
+    <div class="card">
+      <h3>Paiement cross-société / multi-société</h3>
+      <p>Libellés contenant "REGLEMENT SEMM / SEM / APE / SAE / SAOM" = virements regroupés pour plusieurs sociétés.</p>
+      <p>~5 lignes concernées (Row 75, 134, 153...). Montant global non ventilé.</p>
+      <p><strong>Règle :</strong> Marquage "ventilation manuelle requise".</p>
+    </div>
+    <div class="card">
+      <h3>SGC / GC (Service Gestion Comptable)</h3>
+      <p>Les refs sont collées dans le texte sans espace. Ex: <code>4025100000410DU 30/04...</code> contient <code>4025100000410</code> (13 chiffres).</p>
+      <p><strong>Règle :</strong> Regex élargie <code>r'(40\d{11,13})'</code> pour capter les refs collées.</p>
+    </div>
+    <div class="card">
+      <h3>SAGE (travaux / maintenance)</h3>
+      <p>9 lignes SEM avec annotation SAGE. Refs type <code>72-AIX2512-0015</code>. Ce sont des factures <strong>travaux</strong> (pas eau) qui ne sont pas dans le fichier impayés.</p>
+      <p><strong>Règle :</strong> Circuit de traitement séparé (Sage ↔ comptabilité).</p>
+    </div>
+    <div class="card">
+      <h3>INTRUM (recouvrement)</h3>
+      <p>Paiements globaux sans détail de ref. "INTRUM VERSEMENT DU 20251212".</p>
+      <p><strong>Règle :</strong> Marquage "recouvrement INTRUM — ventilation manuelle".</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Lignes à EXCLURE du rapprochement</h3>
+    <table>
+      <tr><th>Critère</th><th>Raison</th><th>Exemple</th></tr>
+      <tr><td>Col D = <code>TOTAL</code></td><td>Virement sortant (solde du compte)</td><td>-113 694 € (SEM) / -521 395 € (SEMM)</td></tr>
+      <tr><td>Montant C &lt; 0</td><td>Idem — transfert interne</td><td>Même lignes</td></tr>
+      <tr><td>Col D = <code>SAGE</code></td><td>Factures travaux hors périmètre impayés eau</td><td>72-AIX2512-0015</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- SECTION 5: PATTERNS REGEX -->
+<div class="section">
+  <div class="section-title"><span class="num">5</span> Patterns d'extraction (regex Python)</div>
+  <div class="card">
+    <table>
+      <tr><th>Cible</th><th>Regex</th><th>Priorité</th></tr>
+      <tr><td>Ref SEM (14 chif.)</td><td><code>r'(10\d{12})'</code></td><td>1</td></tr>
+      <tr><td>Ref SEMM (14 chif.)</td><td><code>r'(40\d{12})'</code></td><td>1</td></tr>
+      <tr><td>Ref VIVAIGO (14 chif.)</td><td><code>r'(33\d{12})'</code></td><td>1 (cross-soc.)</td></tr>
+      <tr><td>Ref tronquée (13 chif.)</td><td><code>r'((?:10|40|33)\d{11})'</code></td><td>1bis (match préfixe)</td></tr>
+      <tr><td>Ref EFICASH</td><td><code>r'REF:\s*00(40\d{11,13})'</code></td><td>1</td></tr>
+      <tr><td>N° de contrat</td><td><code>r'[Cc]ontrat\s*(\d{5,7})'</code></td><td>2</td></tr>
+      <tr><td>N° client</td><td><code>r'[Cc]lient\s*(\d{5,7})'</code></td><td>3</td></tr>
+      <tr><td>Facture SAGE</td><td><code>r'(72-[A-Z]{3}\d{4}-\d{4})'</code></td><td>— (SAGE)</td></tr>
+      <tr><td>Nom émetteur</td><td><code>r'VIREMENT (?:INSTANTANE )?DE\s+(.{5,35}?)(?:\s+\d|\s+VIR|\s+REF)'</code></td><td>3</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- SECTION 6: ALGORITHME -->
+<div class="section">
+  <div class="section-title"><span class="num">6</span> Algorithme de rapprochement</div>
+  <div class="card">
+    <pre>
+<span style="color:#64b5f6">// PRÉPARATION</span>
+1. Charger impayés → index_par_ref[col_O] + index_par_contrat[col_C.zfill(7)]
+2. Charger encaissements SEM + SEMM → filtrer vides, éclater sous-lignes
+3. Exclure: TOTAL, montant négatif
+
+<span style="color:#64b5f6">// POUR CHAQUE LIGNE D'ENCAISSEMENT</span>
+<span style="color:#81c784">NIVEAU 1 — Match par Référence</span>
+  a) Col D = pattern 10/40/33 + 12 chiffres (14 total) ?
+     → lookup exact dans index_par_ref
+     → si trouvé: <span style="color:#81c784">MATCH_REF</span> + vérifier montant C ≈ Solde T
+  b) Col D = EFICASH ? → extraire ref du libellé via REF: 00(40xxx)
+  c) Col D = GC/vide ? → extraire ref(s) du libellé B (regex élargie 11-13 chiffres)
+  d) Ref fait 13 chiffres ? → match par PRÉFIXE (LIKE 'ref%') dans index
+
+<span style="color:#81c784">NIVEAU 2 — Match par Contrat</span>
+  a) Col D = 5-7 chiffres ? → padder à 7 avec zfill → lookup index_par_contrat
+  b) Extraire contrat du libellé B → même lookup
+  c) Si multi-match → départager par montant C vs Solde T le plus proche
+
+<span style="color:#81c784">NIVEAU 3 — Match par Nom + Montant</span>
+  a) Extraire nom du libellé B (après "VIREMENT DE")
+  b) Fuzzy match sur col J des impayés (threshold > 80%)
+  c) Confirmer par montant C ≈ Solde T (tolérance ±0.5%)
+  → <span style="color:#ffa726">MATCH_PROBABLE</span> (flag pour validation)
+
+<span style="color:#ef5350">NIVEAU 4 — Non rapproché</span>
+  → Catégoriser: INTRUM | CROSS-SOCIETE | NOM_SEUL | INCONNU
+  → Marquer pour traitement manuel
+
+<span style="color:#64b5f6">// SORTIE</span>
+Fichier d'import Waterp: Code_soc | N°_contrat | Lettrage(ref) | Montant | Date(J+1) | Mode
++ Rapport de rapprochement avec statut par ligne
+    </pre>
+  </div>
+</div>
+
+<!-- SECTION 7: RÉSULTATS -->
+<div class="section">
+  <div class="section-title"><span class="num">7</span> Résultats du test de rapprochement</div>
+  
+  <div class="grid2">
+    <div class="card">
+      <h3><span class="tag tag-sem">SEM</span> — 55 lignes (hors TOTAL)</h3>
+      <table>
+        <tr><td>Match Ref 10xxx</td><td><strong>26</strong></td><td><span class="tag tag-match">47%</span></td></tr>
+        <tr><td>Match Contrat</td><td><strong>6</strong></td><td><span class="tag tag-match">11%</span></td></tr>
+        <tr><td>SAGE (hors périmètre)</td><td><strong>9</strong></td><td><span class="tag tag-info">16%</span></td></tr>
+        <tr><td>INTRUM (manuel)</td><td><strong>1</strong></td><td><span class="tag tag-warn">2%</span></td></tr>
+        <tr><td>Non rapproché</td><td><strong>13</strong></td><td><span class="tag tag-critical">24%</span></td></tr>
+      </table>
+      <p style="margin-top:10px;font-size:12px"><strong>Montant match ref OK:</strong> 24 lignes avec montant correspondant exactement au Solde TTC</p>
+      <div class="progress-bar"><div class="fill" style="width:58%;background:var(--green)">58% auto</div></div>
+    </div>
+    <div class="card">
+      <h3><span class="tag tag-semm">SEMM</span> — 194 lignes (hors TOTAL)</h3>
+      <table>
+        <tr><td>Match Ref 40xxx (principal)</td><td><strong>86</strong></td><td><span class="tag tag-match">44%</span></td></tr>
+        <tr><td>Match Ref 40xxx (sous-lignes)</td><td><strong>19</strong></td><td><span class="tag tag-match">10%</span></td></tr>
+        <tr><td>Match Contrat</td><td><strong>27</strong></td><td><span class="tag tag-match">14%</span></td></tr>
+        <tr><td>EFICASH</td><td><strong>4</strong></td><td><span class="tag tag-match">2%</span></td></tr>
+        <tr><td>INTRUM (manuel)</td><td><strong>2</strong></td><td><span class="tag tag-warn">1%</span></td></tr>
+        <tr><td>Non rapproché</td><td><strong>56</strong></td><td><span class="tag tag-critical">29%</span></td></tr>
+      </table>
+      <p style="margin-top:10px;font-size:12px"><strong>Montant match ref OK:</strong> 72 lignes exactes. 14 avec écart (paiements partiels ou multi-factures)</p>
+      <div class="progress-bar"><div class="fill" style="width:70%;background:var(--green)">70% auto</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Potentiel d'amélioration sur les non-rapprochés</h3>
+    <table>
+      <tr><th>Catégorie de non-match</th><th>Volume</th><th>Amélioration possible</th></tr>
+      <tr><td>Contrat avec zéros manquants (padding)</td><td>~3</td><td><span class="tag tag-match">Auto → zfill(7)</span></td></tr>
+      <tr><td>Ref tronquée 13 chiffres</td><td>~8</td><td><span class="tag tag-match">Auto → match préfixe</span></td></tr>
+      <tr><td>Ref cross-société (10/33 dans SEMM)</td><td>~5</td><td><span class="tag tag-match">Auto → recherche élargie</span></td></tr>
+      <tr><td>SGC/GC avec ref collée dans libellé</td><td>~4</td><td><span class="tag tag-match">Auto → regex élargie</span></td></tr>
+      <tr><td>Contrat dans libellé (non extrait)</td><td>~8</td><td><span class="tag tag-match">Auto → regex contrat</span></td></tr>
+      <tr><td>Cross-société (SEMM/SEM/APE)</td><td>~5</td><td><span class="tag tag-warn">Manuel → ventilation</span></td></tr>
+      <tr><td>INTRUM (recouvrement)</td><td>3</td><td><span class="tag tag-warn">Manuel</span></td></tr>
+      <tr><td>Nom seul (aucun identifiant)</td><td>~25</td><td><span class="tag tag-warn">Fuzzy → validation</span></td></tr>
+      <tr><td>AJAssocies sans ventilation</td><td>~5</td><td><span class="tag tag-critical">Manuel</span></td></tr>
+    </table>
+    
+    <div class="highlight" style="margin-top:14px">
+      <strong>Estimation avec améliorations :</strong> Le taux de match automatique passerait de ~65% à <strong>~82%</strong> en appliquant le padding, le match préfixe, la recherche cross-société et l'extraction élargie du libellé. Les ~18% restants nécessitent du fuzzy matching (validé manuellement) ou un traitement purement manuel.
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 8: FICHIER D'IMPORT -->
+<div class="section">
+  <div class="section-title"><span class="num">8</span> Format de sortie — Fichier d'import Waterp <span class="tag tag-new">Objectif</span></div>
+  <div class="card">
+    <h3>Colonnes requises (déduites de la saisie manuelle)</h3>
+    <table>
+      <tr><th>Colonne</th><th>Source</th><th>Exemple</th></tr>
+      <tr><td>Code société</td><td>Préfixe 2 chiffres de la ref</td><td><code>40</code></td></tr>
+      <tr><td>Numéro de contrat</td><td>Col C impayés (via match ref)</td><td><code>1089100</code></td></tr>
+      <tr><td>Lettrage</td><td>Référence facture = col O impayés</td><td><code>40251200016320</code></td></tr>
+      <tr><td>Type d'écriture</td><td>Fixe</td><td><code>REGLEMENT 09</code></td></tr>
+      <tr><td>Mode règlement</td><td>Fixe pour CCP</td><td><code>CCP VIREMENTS DIVERS</code></td></tr>
+      <tr><td>Montant encaissement</td><td>Col C encaissement (ou col E si ventilé)</td><td><code>57761.88</code></td></tr>
+      <tr><td>Date</td><td>J+1 par rapport à la date encaissement</td><td><code>17/12/2025</code></td></tr>
+      <tr><td>Date de traitement</td><td>Idem</td><td><code>17/12/2025</code></td></tr>
+      <tr><td>Mois de comptabilisation</td><td>Mois de la date</td><td><code>12</code></td></tr>
+    </table>
+    <div class="highlight">
+      ⚠️ Tu mentionnes un "Exemple de fichier d'import des encaissements" en cours de recette. Si tu peux me le fournir, je pourrai caler exactement les colonnes et produire un script qui génère ce fichier automatiquement à partir du rapprochement.
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 9: RECOMMANDATIONS -->
+<div class="section">
+  <div class="section-title"><span class="num">9</span> Recommandations techniques</div>
+  <div class="card">
+    <ol style="font-size:13px;color:var(--text2);padding-left:22px;line-height:2">
+      <li><strong>Formules REGEXEXTRACT :</strong> Proviennent de Google Sheets (<code>__xludf.DUMMYFUNCTION</code>). En Python : lire avec <code>data_only=True</code> pour les valeurs cached, OU ré-appliquer la regex sur le libellé.</li>
+      <li><strong>Index performant :</strong> Charger les 112K lignes d'impayés en dictionnaires Python (ref→infos, contrat→infos) pour des lookups O(1).</li>
+      <li><strong>Types string obligatoires :</strong> Lire col C (contrat), col E (client), col O (ref) en <code>dtype=str</code> pour conserver les zéros en tête.</li>
+      <li><strong>Tolérance montant :</strong> Accepter un delta ≤ 0,02 € sur les montants (arrondis centimes).</li>
+      <li><strong>Multi-match ref :</strong> Si une ref a plusieurs lignes dans les impayés (ex: FC + FR), prendre celle dont le Type R = <code>FR</code> (facture relève) et le Solde TTC > 0.</li>
+      <li><strong>Fichier d'import :</strong> La cible finale est de générer le fichier d'import Waterp pour supprimer la saisie manuelle des ~250 lignes quotidiennes.</li>
+    </ol>
+  </div>
+</div>
+
+<footer style="text-align:center;padding:28px 0;color:var(--text2);font-size:11px">
+  Analyse rapprochement v2 • Claude / SOMEI • Décembre 2025
+</footer>
+
+</div>
+</body>
+</html>

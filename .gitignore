@@ -1,0 +1,53 @@
+# ── Données métier (NE JAMAIS versionner) ──
+datas/
+*.xlsx
+*.xls
+*.csv
+
+# ── Sorties générées par le moteur ──
+import_waterp_*.csv
+rapport_*.xlsx
+test_import.csv
+test_rapport.xlsx
+
+# ── Bundle Claude Design (1.7 Mo, regénérable) ──
+Rapprochement Bancaire - Standalone.html
+
+# ── Documents Office bureautiques ──
+*.docx
+*.url
+~$*
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+env/
+.python-version
+
+# ── IDE / éditeurs ──
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── OS ──
+.DS_Store
+Thumbs.db
+desktop.ini
+*~
+
+# ── Logs / temporaires ──
+*.log
+*.tmp
+tmp/
+temp/
